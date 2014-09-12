@@ -15,11 +15,14 @@
 
 @implementation ViewController
 
+BOOL bleIsActive;
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
     _ble = [[BLE alloc] init];
+    bleIsActive = NO;
     [_ble controlSetup];
     _ble.delegate = self;
 }
@@ -58,13 +61,35 @@
 {
     NSLog(@"BLE connected");
     
+    bleIsActive = YES;
     // send reset
     UInt8 buf[] = {0x04, 0x00, 0x00};
     NSData *data = [[NSData alloc] initWithBytes:buf length:3];
     [_ble write:data];
 }
 
+- (void)sendBLEData:(unsigned char)command onOrOff:(unsigned char)toggle
+{
+    typedef struct {
+        unsigned char command;
+        unsigned char toggle;
+    } Header;
+    
+    Header header;
+    header.command = command;
+    header.toggle = toggle;
+    
+    NSData *data = [NSData dataWithBytes:&header length:sizeof(header)];
+    if (bleIsActive) {
+        [_ble write:data];
+    }
+}
 
+
+-(IBAction)sendData:(id)sender {
+    NSLog(@"sent");
+    [self sendBLEData:'a' onOrOff:1];
+}
 
 -(void) bleDidReceiveData:(unsigned char *) data length:(int) length {
     NSLog([NSString stringWithFormat:@"DID RECIEVE DATA - %s", data]);
