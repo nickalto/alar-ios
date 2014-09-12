@@ -81,10 +81,10 @@ BOOL bleGMTSet = false;
     header.toggle = 1;
     
     NSInteger secondsFromGMT = [[NSTimeZone localTimeZone] secondsFromGMT];
-    int hoursFromGmt = ( secondsFromGMT / 60 ) / 60;
+    int hoursFromGmt = (int)( secondsFromGMT / 60 ) / 60;
     
     
-    // Arduino expects value as TxxxxxxxT to delimit time value
+    // Arduino expects value as GxxxG to delimit time value
     NSString *timeString = [NSString stringWithFormat:@"G%dG", hoursFromGmt];
     
     for( int i = 0; i < timeString.length; i++ ) {
@@ -117,9 +117,7 @@ BOOL bleGMTSet = false;
     [dateFormatter setTimeZone:gmt];
     NSString *timeStamp = [dateFormatter stringFromDate:[NSDate date]];
     NSDate *curdate = [dateFormatter dateFromString:timeStamp];
-    NSInteger secondsFromGMT = [[NSTimeZone localTimeZone] secondsFromGMT];
     int unix_timestamp =  [curdate timeIntervalSince1970];
-    int hoursFromGmt = ( secondsFromGMT / 60 ) / 60;
     
 
     // Arduino expects value as TxxxxxxxT to delimit time value
@@ -166,13 +164,12 @@ BOOL bleGMTSet = false;
     
     if([[NSString stringWithFormat:@"%s", data] isEqualToString:@"GMTSET"]) {
         bleGMTSet = true;
-        NSLog(@"GMT WAS SUCESSFULLY SET!");
     }
     
     if([[NSString stringWithFormat:@"%s", data] isEqualToString:@"TIMESET"]) {
         bleTimeSet = true;
-        NSLog(@"TIME WAS SUCESSFULLY SET!");
     }
+    
     [self.sentData setText:[NSString stringWithFormat:@"%s", data]];
 }
 
