@@ -2,9 +2,6 @@
 //  ViewController.m
 //  Shelf
 //
-//  Created by Gregory on 12/10/13.
-//  Copyright (c) 2013 Artefact. All rights reserved.
-//
 
 #import "ViewController.h"
 
@@ -17,6 +14,7 @@
 
 BOOL bleIsActive;
 BOOL bleTimeSet = false;
+BOOL bleGMTSet = false;
 
 - (void)viewDidLoad
 {
@@ -68,13 +66,43 @@ BOOL bleTimeSet = false;
     UInt8 buf[] = {0x04, 0x00, 0x00};
     NSData *data = [[NSData alloc] initWithBytes:buf length:3];
     [_ble write:data];
-    [self sendBLEDTime];
+    [self sendBLEGMTOffset];
+    [self sendBLETime];
 }
 
-- (void)sendBLEDTime
+- (void)sendBLEGMTOffset
 {
     typedef struct {
-        unsigned char command[16];
+        unsigned char command[6];
+        unsigned char toggle;
+    } Header;
+    
+    Header header;
+    header.toggle = 1;
+    
+    NSInteger secondsFromGMT = [[NSTimeZone localTimeZone] secondsFromGMT];
+    int hoursFromGmt = ( secondsFromGMT / 60 ) / 60;
+    
+    
+    // Arduino expects value as TxxxxxxxT to delimit time value
+    NSString *timeString = [NSString stringWithFormat:@"G%dG", hoursFromGmt];
+    
+    for( int i = 0; i < timeString.length; i++ ) {
+        header.command[i] = [timeString characterAtIndex:i];
+    }
+    
+    NSLog(@"%s", header.command);
+    NSData *data = [NSData dataWithBytes:&header length:sizeof(header)];
+    if (bleIsActive) {
+        [_ble write:data];
+    }
+}
+
+
+- (void)sendBLETime
+{
+    typedef struct {
+        unsigned char command[12];
         unsigned char toggle;
     } Header;
     
@@ -136,6 +164,11 @@ BOOL bleTimeSet = false;
 -(void) bleDidReceiveData:(unsigned char *) data length:(int) length {
     NSLog([NSString stringWithFormat:@"DID RECIEVE DATA - %s", data]);
     
+    if([[NSString stringWithFormat:@"%s", data] isEqualToString:@"GMTSET"]) {
+        bleGMTSet = true;
+        NSLog(@"GMT WAS SUCESSFULLY SET!");
+    }
+    
     if([[NSString stringWithFormat:@"%s", data] isEqualToString:@"TIMESET"]) {
         bleTimeSet = true;
         NSLog(@"TIME WAS SUCESSFULLY SET!");
@@ -155,8 +188,7 @@ BOOL bleTimeSet = false;
     }
 }
 
-- (IBAction)btnScanForPeripherals:(id)sender
-{
+-(void)bleConnect {
     NSLog(@"btnScanForPeripherals");
     
     if (_ble.activePeripheral) {
@@ -176,6 +208,11 @@ BOOL bleTimeSet = false;
     
     [NSTimer scheduledTimerWithTimeInterval:(float)2.0 target:self selector:@selector(connectionTimer:) userInfo:nil repeats:NO];
     
+}
+
+- (IBAction)btnScanForPeripherals:(id)sender
+{
+    [self bleConnect];
 }
 
 @end
