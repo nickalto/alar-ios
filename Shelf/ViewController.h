@@ -15,7 +15,7 @@
 }
 
 @property (strong,nonatomic) BLE *ble;
-@property (weak, nonatomic) IBOutlet UILabel *ready;
+@property (weak, nonatomic) IBOutlet UILabel *sentData;
 @property (weak, nonatomic) IBOutlet UIButton *btn;
 
 

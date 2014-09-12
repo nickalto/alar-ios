@@ -36,7 +36,7 @@
                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Nj9-m9-md5">
                                 <rect key="frame" x="20" y="431" width="280" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <state key="normal" title="Button">
+                                <state key="normal" title="Send Data">
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                                 <connections>
@@ -50,7 +50,7 @@
                     <connections>
                         <outlet property="btn" destination="Nj9-m9-md5" id="E5h-8b-8cg"/>
                         <outlet property="btnConnect" destination="3ae-t0-nzP" id="Dab-b6-gHm"/>
-                        <outlet property="ready" destination="Ha4-DJ-ssF" id="zWs-Bl-umT"/>
+                        <outlet property="sentData" destination="Ha4-DJ-ssF" id="fo2-Fk-BxU"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="x5A-6p-PRh" sceneMemberID="firstResponder"/>

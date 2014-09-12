@@ -16,6 +16,7 @@
 @implementation ViewController
 
 BOOL bleIsActive;
+BOOL bleTimeSet = false;
 
 - (void)viewDidLoad
 {
@@ -23,6 +24,7 @@ BOOL bleIsActive;
 	// Do any additional setup after loading the view, typically from a nib.
     _ble = [[BLE alloc] init];
     bleIsActive = NO;
+    bleTimeSet = NO;
     [_ble controlSetup];
     _ble.delegate = self;
 }
@@ -54,7 +56,7 @@ BOOL bleIsActive;
 {
     NSLog(@"BLE disconnected");
     [btnConnect setTitle:@"Connect to Shelf" forState:UIControlStateNormal];
-    [self.ready setText:@""];
+    [self.sentData setText:@""];
 }
 
 - (void)bleDidConnect
@@ -66,7 +68,46 @@ BOOL bleIsActive;
     UInt8 buf[] = {0x04, 0x00, 0x00};
     NSData *data = [[NSData alloc] initWithBytes:buf length:3];
     [_ble write:data];
+    [self sendBLEDTime];
 }
+
+- (void)sendBLEDTime
+{
+    typedef struct {
+        unsigned char command[16];
+        unsigned char toggle;
+    } Header;
+    
+    Header header;
+    header.toggle = 1;
+    
+    //
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    [dateFormatter setDateFormat:@"HH:mm:ss dd MM yyyy"];
+    
+    NSTimeZone *gmt = [NSTimeZone systemTimeZone];
+    [dateFormatter setTimeZone:gmt];
+    NSString *timeStamp = [dateFormatter stringFromDate:[NSDate date]];
+    NSDate *curdate = [dateFormatter dateFromString:timeStamp];
+    NSInteger secondsFromGMT = [[NSTimeZone localTimeZone] secondsFromGMT];
+    int unix_timestamp =  [curdate timeIntervalSince1970];
+    int hoursFromGmt = ( secondsFromGMT / 60 ) / 60;
+    
+
+    // Arduino expects value as TxxxxxxxT to delimit time value
+    NSString *timeString = [NSString stringWithFormat:@"T%dT", unix_timestamp];
+    
+    for( int i = 0; i < timeString.length; i++ ) {
+        header.command[i] = [timeString characterAtIndex:i];
+    }
+    
+    NSLog(@"%s", header.command);
+    NSData *data = [NSData dataWithBytes:&header length:sizeof(header)];
+    if (bleIsActive) {
+        [_ble write:data];
+    }
+}
+
 
 - (void)sendBLEData:(unsigned char)command onOrOff:(unsigned char)toggle
 {
@@ -88,12 +129,18 @@ BOOL bleIsActive;
 
 -(IBAction)sendData:(id)sender {
     NSLog(@"sent");
-    [self sendBLEData:'a' onOrOff:1];
+
+//    [self sendBLEData:'a' onOrOff:1];
 }
 
 -(void) bleDidReceiveData:(unsigned char *) data length:(int) length {
     NSLog([NSString stringWithFormat:@"DID RECIEVE DATA - %s", data]);
-    [self.ready setText:@"READY!"];
+    
+    if([[NSString stringWithFormat:@"%s", data] isEqualToString:@"TIMESET"]) {
+        bleTimeSet = true;
+        NSLog(@"TIME WAS SUCESSFULLY SET!");
+    }
+    [self.sentData setText:[NSString stringWithFormat:@"%s", data]];
 }
 
 - (void)connectionTimer:(NSTimer*)timer
