@@ -66,38 +66,8 @@ BOOL bleGMTSet = false;
     UInt8 buf[] = {0x04, 0x00, 0x00};
     NSData *data = [[NSData alloc] initWithBytes:buf length:3];
     [_ble write:data];
-    [self sendBLEGMTOffset];
     [self sendBLETime];
 }
-
-- (void)sendBLEGMTOffset
-{
-    typedef struct {
-        unsigned char command[6];
-        unsigned char toggle;
-    } Header;
-    
-    Header header;
-    header.toggle = 1;
-    
-    NSInteger secondsFromGMT = [[NSTimeZone localTimeZone] secondsFromGMT];
-    int hoursFromGmt = (int)( secondsFromGMT / 60 ) / 60;
-    
-    
-    // Arduino expects value as GxxxG to delimit time value
-    NSString *timeString = [NSString stringWithFormat:@"G%dG", hoursFromGmt];
-    
-    for( int i = 0; i < timeString.length; i++ ) {
-        header.command[i] = [timeString characterAtIndex:i];
-    }
-    
-    NSLog(@"%s", header.command);
-    NSData *data = [NSData dataWithBytes:&header length:sizeof(header)];
-    if (bleIsActive) {
-        [_ble write:data];
-    }
-}
-
 
 - (void)sendBLETime
 {
@@ -109,7 +79,7 @@ BOOL bleGMTSet = false;
     Header header;
     header.toggle = 1;
     
-    //
+    
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"HH:mm:ss dd MM yyyy"];
     
@@ -117,7 +87,7 @@ BOOL bleGMTSet = false;
     [dateFormatter setTimeZone:gmt];
     NSString *timeStamp = [dateFormatter stringFromDate:[NSDate date]];
     NSDate *curdate = [dateFormatter dateFromString:timeStamp];
-    int unix_timestamp =  [curdate timeIntervalSince1970];
+    int unix_timestamp =  [curdate timeIntervalSince1970] + [[NSTimeZone localTimeZone] secondsFromGMT];
     
 
     // Arduino expects value as TxxxxxxxT to delimit time value
